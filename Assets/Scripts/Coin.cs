@@ -12,7 +12,7 @@ public class Coin : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (alreadyCollected || !other.CompareTag("Player")) return;
+        if (!other.CompareTag("Player")) return;
         GameManager.Instance.AddScore(scoreValue);
         Destroy(gameObject);
     }
