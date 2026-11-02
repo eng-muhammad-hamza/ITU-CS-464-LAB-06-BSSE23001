@@ -1,21 +1,28 @@
-using System.Collections;
 using UnityEngine;
- 
+
 public enum PowerUpType { Speed, Shield }
- 
+
 public class PowerUp : MonoBehaviour
 {
     [SerializeField] PowerUpType type = PowerUpType.Speed;
     [SerializeField] float multiplier = 1.6f;
     [SerializeField] float duration = 5f;
+    bool alreadyCollected;
 
     void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("Player")) return;
+        if (alreadyCollected || !other.CompareTag("Player")) return;
+        alreadyCollected = true;
         if (type == PowerUpType.Speed)
-            other.GetComponent<PlayerController>().BoostSpeed(multiplier, duration);
+        {
+            if (other.TryGetComponent(out PlayerController playerController))
+                playerController.BoostSpeed(multiplier, duration);
+        }
         else
-            other.GetComponent<Health>().shielded = true;
+        {
+            if (other.TryGetComponent(out Health playerHealth))
+                playerHealth.shielded = true;
+        }
         Destroy(gameObject);
     }
 }

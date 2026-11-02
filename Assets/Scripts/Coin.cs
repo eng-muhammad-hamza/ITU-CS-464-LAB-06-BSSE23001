@@ -2,18 +2,18 @@ using UnityEngine;
 
 public class Coin : MonoBehaviour
 {
-    [SerializeField] int scoreValue = 1;
-    [SerializeField] float spinDegreesPerSecond = 120f;
+    [SerializeField] int value = 1;
+    [SerializeField] float spinSpeed = 90f;
+    bool alreadyCollected;
 
-    void Update()
-    {
-        transform.Rotate(0f, spinDegreesPerSecond * Time.deltaTime, 0f, Space.World);
-    }
+    void Update() => transform.Rotate(0f, spinSpeed * Time.deltaTime, 0f);
 
     void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("Player")) return;
-        GameManager.Instance.AddScore(scoreValue);
+        if (alreadyCollected || !other.CompareTag("Player")) return;
+        alreadyCollected = true;
+        if (GameManager.Instance != null) GameManager.Instance.AddScore(value);
+        else Debug.LogError("No active GameManager in the scene.", this);
         Destroy(gameObject);
     }
 }

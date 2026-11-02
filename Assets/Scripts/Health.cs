@@ -7,15 +7,15 @@ public class Health : MonoBehaviour
     public bool shielded;
     int current;
     float invulnerableUntil;
- 
+
     public int Current => current;
     public int Max => max;
- 
+
     void Awake() => current = max;
- 
+
     public bool TakeDamage(int amount)
     {
-        if (current <= 0 || Time.time < invulnerableUntil) return false;
+        if (amount <= 0 || current <= 0 || Time.time < invulnerableUntil) return false;
         invulnerableUntil = Time.time + iFrames;
         if (shielded)
         {
@@ -23,15 +23,18 @@ public class Health : MonoBehaviour
             return false;
         }
         current -= amount;
-        GameManager.Instance.UpdateUI();
-        if (current <= 0) GameManager.Instance.PlayerDied();
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.UpdateUI();
+            if (current <= 0) GameManager.Instance.PlayerDied();
+        }
         return true;
     }
- 
+
     public void Restore(float protection)
     {
         current = max;
         invulnerableUntil = Time.time + protection;
-        GameManager.Instance.UpdateUI();
+        if (GameManager.Instance != null) GameManager.Instance.UpdateUI();
     }
 }

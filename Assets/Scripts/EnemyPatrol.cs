@@ -1,12 +1,12 @@
 using UnityEngine;
- 
+
 public enum PatrolMode { Loop, PingPong, Random }
 
 public class EnemyPatrol : MonoBehaviour
 {
     [SerializeField] Transform[] points;
     [SerializeField] PatrolMode mode = PatrolMode.Loop;
-    [SerializeField] float speed = 2.0f;
+    [SerializeField] float speed = 2f;
     [SerializeField] float waitTime = 0f;
     [SerializeField] float turnSpeed = 300f;
     int index;
@@ -15,10 +15,13 @@ public class EnemyPatrol : MonoBehaviour
 
     void Update()
     {
+        if (points == null || points.Length == 0) return;
         if (Time.time < waitUntil) return;
         Vector3 target = points[index].position;
         Vector3 toTarget = target - transform.position;
         transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+
+        toTarget.y = 0f;
         if (toTarget != Vector3.zero)
         {
             Quaternion look = Quaternion.LookRotation(toTarget);
@@ -33,6 +36,7 @@ public class EnemyPatrol : MonoBehaviour
 
     int NextIndex()
     {
+        if (points.Length == 1) return 0;
         if (mode == PatrolMode.Loop) return (index + 1) % points.Length;
         if (mode == PatrolMode.PingPong)
         {

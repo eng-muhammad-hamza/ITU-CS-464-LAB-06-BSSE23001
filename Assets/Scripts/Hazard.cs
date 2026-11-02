@@ -1,21 +1,26 @@
 using System.Collections;
 using UnityEngine;
- 
+
 public class Hazard : MonoBehaviour
 {
     [SerializeField] int damage = 1;
     [SerializeField] float knockback = 6f;
- 
-    [Header("A crusher: give it a rest time and it strikes on a cycle")]
-    [SerializeField] float restTime = 2.4f;
+
+    [Header("A crusher: give it a rest time and it strikes on a cycle (0 = always dangerous)")]
+    [SerializeField] float restTime = 0f;
     [SerializeField] float warnTime = 0.7f;
     [SerializeField] float strikeTime = 0.4f;
     [SerializeField] GameObject warning;
- 
+
     IEnumerator Start()
     {
         if (restTime <= 0f) yield break;
         Collider zone = GetComponent<Collider>();
+        if (zone == null || warning == null)
+        {
+            Debug.LogWarning($"{name}: crusher needs a Collider and a Warning object.", this);
+            yield break;
+        }
         while (true)
         {
             zone.enabled = false;
@@ -27,7 +32,7 @@ public class Hazard : MonoBehaviour
             yield return new WaitForSeconds(strikeTime);
         }
     }
- 
+
     void OnTriggerStay(Collider other)
     {
         if (!other.TryGetComponent(out Health health)) return;
@@ -36,6 +41,7 @@ public class Hazard : MonoBehaviour
         if (body == null) return;
         Vector3 away = body.position - transform.position;
         away.y = 0f;
+        if (away.sqrMagnitude < 0.0001f) away = Vector3.forward;
         body.AddForce(away.normalized * knockback, ForceMode.Impulse);
     }
 }

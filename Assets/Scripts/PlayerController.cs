@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] float moveForce = 10f;
@@ -9,8 +10,12 @@ public class PlayerController : MonoBehaviour
     float speedMultiplier = 1f;
     Coroutine boost;
 
-    void Awake() => rb = GetComponent<Rigidbody>();
- 
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+        rb.sleepThreshold = 0f;
+    }
+
     void Update()
     {
         float h = Input.GetAxis("Horizontal");
@@ -25,6 +30,7 @@ public class PlayerController : MonoBehaviour
 
     public void BoostSpeed(float multiplier, float seconds)
     {
+        if (multiplier <= 0f || seconds <= 0f) return;
         if (boost != null) StopCoroutine(boost);
         boost = StartCoroutine(Boost(multiplier, seconds));
     }
@@ -33,6 +39,12 @@ public class PlayerController : MonoBehaviour
     {
         speedMultiplier = multiplier;
         yield return new WaitForSeconds(seconds);
+        speedMultiplier = 1f;
+        boost = null;
+    }
+
+    void OnDisable()
+    {
         speedMultiplier = 1f;
         boost = null;
     }
