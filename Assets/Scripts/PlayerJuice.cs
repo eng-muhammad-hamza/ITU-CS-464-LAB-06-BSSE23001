@@ -140,6 +140,13 @@ public class PlayerJuice : MonoBehaviour
                 blend *= Mathf.Repeat(Time.time * 8f, 1f) < 0.5f ? 0f : 1f;
             finalColor = Color.Lerp(baseBodyColor, JuiceFx.SpeedColor, blend);
         }
+        if (health.IsGhost)
+        {
+            float ghostBlend = 0.75f;
+            if (health.GhostSecondsRemaining < boostEndingWarningSeconds)
+                ghostBlend *= Mathf.Repeat(Time.time * 8f, 1f) < 0.5f ? 0f : 1f;
+            finalColor = Color.Lerp(finalColor, JuiceFx.GhostColor, ghostBlend);
+        }
         if (flashSecondsLeft > 0f)
         {
             flashSecondsLeft -= Time.unscaledDeltaTime;

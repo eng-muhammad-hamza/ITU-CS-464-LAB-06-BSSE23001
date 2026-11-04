@@ -10,6 +10,12 @@ public class Health : MonoBehaviour
     PlayerJuice juice;
     PlayerController controller;
 
+    float ghostUntil;
+    public bool IsGhost => Time.time < ghostUntil;
+    public float GhostSecondsRemaining => Mathf.Max(0f, ghostUntil - Time.time);
+
+    public void GrantGhost(float seconds) => ghostUntil = Time.time + seconds;
+
     public int Current => current;
     public int Max => max;
     public bool Shielded => shielded;
@@ -72,6 +78,7 @@ public class Health : MonoBehaviour
 
     public void Restore(float protection)
     {
+        ghostUntil = 0f;
         current = max;
         invulnerableUntil = Time.time + protection;
         if (controller != null) controller.SetControlsEnabled(true);

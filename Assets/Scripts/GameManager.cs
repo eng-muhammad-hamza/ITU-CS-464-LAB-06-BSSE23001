@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public enum Objective { CollectCoins, ReachGoal }
+public enum Objective { CollectCoins, ReachGoal, CollectKeys }
 
 public class GameManager : MonoBehaviour
 {
@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] Objective objective = Objective.CollectCoins;
     [SerializeField] int targetScore = 10;
     [SerializeField] string objectiveLabel = "Reach the goal!";
+    [SerializeField] int keysRequired = 3;
 
     [Header("Timer (0 = no timer)")]
     [SerializeField] float timeLimit = 0f;
@@ -45,6 +46,8 @@ public class GameManager : MonoBehaviour
     bool redCoinAlreadySpawned;
     bool gameAlreadyFinished;
     float timeLeft;
+    int keysCollected;
+    public bool ExitUnlocked => objective != Objective.CollectKeys || keysCollected >= keysRequired;
 
     public bool IsFinished => gameAlreadyFinished;
 
@@ -98,7 +101,8 @@ public class GameManager : MonoBehaviour
 
     public void ReachGoal()
     {
-        if (objective == Objective.ReachGoal) Win();
+        if (objective == Objective.CollectCoins || !ExitUnlocked) return;
+        Win();
     }
 
     public void AddScore(int amount)
@@ -139,7 +143,11 @@ public class GameManager : MonoBehaviour
     public void UpdateUI()
     {
         if (scoreText != null)
-            scoreText.text = objective == Objective.CollectCoins ? $"Score: {score} / {targetScore}" : objectiveLabel;
+        {
+            if (objective == Objective.CollectCoins) scoreText.text = $"Score: {score} / {targetScore}";
+            else if (objective == Objective.CollectKeys) scoreText.text = $"Keys: {keysCollected} / {keysRequired}";
+            else scoreText.text = objectiveLabel;
+        }
         if (livesText != null && player != null)
             livesText.text = $"Lives: {lives}   Hearts: {Mathf.Max(player.Current, 0)} / {player.Max}";
     }
@@ -175,9 +183,10 @@ public class GameManager : MonoBehaviour
         gameAlreadyFinished = true;
         if (resultText != null)
         {
-            string summary = objective == Objective.CollectCoins
-                ? $"Score: {score} / {targetScore}"
-                : (timeLimit > 0f ? $"Time left: {timeLeft:0.0} s" : "Goal reached!");
+            string summary;
+            if (objective == Objective.CollectCoins) summary = $"Score: {score} / {targetScore}";
+            else if (objective == Objective.CollectKeys) summary = $"Keys: {keysCollected} / {keysRequired}\nLives left: {lives}";
+            else summary = timeLimit > 0f ? $"Time left: {timeLeft:0.0} s" : "Goal reached!";
             if (bonusTotal > 0) summary += $"\nBonusCoins: {bonusCollected}/{bonusTotal}";
             resultText.text = summary;
         }
@@ -212,5 +221,18 @@ public class GameManager : MonoBehaviour
         int next = SceneManager.GetActiveScene().buildIndex + 1;
         if (next >= SceneManager.sceneCountInBuildSettings) next = 0;
         SceneManager.LoadScene(next);
+    }
+
+    public void AddKey()
+    {
+        if (gameAlreadyFinished) return;
+        keysCollected++;
+        UpdateUI();
+        PunchText(scoreText);
+        if (player != null)
+        {
+            string message = keysCollected >= keysRequired ? "EXIT OPEN!" : $"KEY {keysCollected}/{keysRequired}";
+            JuiceFx.FloatingText(player.transform.position + Vector3.up * 1.6f, message, JuiceFx.KeyColor, 20f);
+        }
     }
 }

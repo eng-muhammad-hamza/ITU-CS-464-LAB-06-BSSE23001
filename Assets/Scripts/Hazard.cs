@@ -4,6 +4,7 @@ using UnityEngine;
 public class Hazard : MonoBehaviour
 {
     [SerializeField] int damage = 1;
+    [SerializeField] bool ghostCanPass = false;
     [SerializeField] float knockback = 6f;
 
     [Header("A crusher: give it a rest time and it strikes on a cycle (0 = always dangerous)")]
@@ -94,6 +95,7 @@ public class Hazard : MonoBehaviour
     void OnTriggerStay(Collider other)
     {
         if (!other.TryGetComponent(out Health health)) return;
+        if (ghostCanPass && health.IsGhost) return;
         if (!health.TakeDamage(damage)) return;
         Rigidbody body = other.attachedRigidbody;
         if (body == null) return;

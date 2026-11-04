@@ -5,6 +5,15 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] float moveForce = 10f;
+
+    [Header("Ice")]
+    [SerializeField] float iceDamping = 0.1f;
+    [SerializeField] float iceControl = 0.5f;
+    [SerializeField] float iceMaxSpeed = 7f;
+    int iceContacts;
+    float normalLinearDamping;
+    float normalAngularDamping;
+
     Rigidbody rb;
     PlayerJuice juice;
     Vector3 input;
@@ -21,6 +30,8 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         rb.sleepThreshold = 0f;
         juice = GetComponent<PlayerJuice>();
+        normalLinearDamping = rb.linearDamping;
+        normalAngularDamping = rb.angularDamping;
     }
 
     void OnDisable()
@@ -43,7 +54,17 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        rb.AddForce(input * moveForce * speedMultiplier);
+        bool onIce = iceContacts > 0;
+        rb.AddForce(input * moveForce * speedMultiplier * (onIce ? iceControl : 1f));
+        if (!onIce) return;
+
+        Vector3 velocity = rb.linearVelocity;
+        Vector3 flat = new Vector3(velocity.x, 0f, velocity.z);
+        if (flat.magnitude > iceMaxSpeed)
+        {
+            flat = flat.normalized * iceMaxSpeed;
+            rb.linearVelocity = new Vector3(flat.x, velocity.y, flat.z);
+        }
     }
 
     public void SetControlsEnabled(bool controlsAllowed)
@@ -77,5 +98,15 @@ public class PlayerController : MonoBehaviour
         boost = null;
         speedMultiplier = 1f;
         if (juice != null) juice.SpeedBoostEnded();
+    }
+
+    public void EnterIce() { iceContacts++; ApplyIce(); }
+    public void ExitIce() { iceContacts = Mathf.Max(0, iceContacts - 1); ApplyIce(); }
+
+    void ApplyIce()
+    {
+        bool onIce = iceContacts > 0;
+        rb.linearDamping = onIce ? iceDamping : normalLinearDamping;
+        rb.angularDamping = onIce ? iceDamping : normalAngularDamping;
     }
 }
