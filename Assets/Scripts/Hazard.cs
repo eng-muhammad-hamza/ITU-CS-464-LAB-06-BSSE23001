@@ -20,6 +20,7 @@ public class Hazard : MonoBehaviour
     [SerializeField] float riseSeconds = 0.6f;
     [SerializeField] float shakeSeconds = 0.3f;
     [SerializeField] float shakeMagnitude = 0.3f;
+    [SerializeField] float startDelay = 0f;
 
     IEnumerator Start()
     {
@@ -32,6 +33,11 @@ public class Hazard : MonoBehaviour
         }
 
         SetPistonLocalHeight(pistonRaisedLocalY);
+        if (startDelay > 0f)
+        {
+            zone.enabled = false;
+            yield return new WaitForSeconds(startDelay);
+        }
         while (true)
         {
             zone.enabled = false;

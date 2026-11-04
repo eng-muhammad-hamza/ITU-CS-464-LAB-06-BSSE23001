@@ -9,6 +9,7 @@ public static class JuiceFx
     public static readonly Color DamageColor = new Color(1f, 0.25f, 0.25f);
     public static readonly Color HeartColor = new Color(1f, 0.4f, 0.6f);
     public static readonly Color PositiveColor = new Color(0.45f, 1f, 0.55f);
+    public static readonly Color TimeColor = new Color(0.72f, 0.5f, 1f);
 
     static Material cachedParticleMaterial;
 

@@ -3,12 +3,20 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+public enum Objective { CollectCoins, ReachGoal }
+
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
     [Header("Objective")]
+    [SerializeField] Objective objective = Objective.CollectCoins;
     [SerializeField] int targetScore = 10;
+    [SerializeField] string objectiveLabel = "Reach the goal!";
+
+    [Header("Timer (0 = no timer)")]
+    [SerializeField] float timeLimit = 0f;
+    [SerializeField] float bonusTimeReward = 10f;
 
     [Header("Lives and respawn")]
     [SerializeField] int lives = 3;
@@ -21,7 +29,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] TMP_Text scoreText;
     [SerializeField] TMP_Text livesText;
     [SerializeField] TMP_Text bonusText;
+    [SerializeField] TMP_Text timerText;
     [SerializeField] TMP_Text resultText;
+    [SerializeField] TMP_Text loseReasonText;
     [SerializeField] GameObject winPanel;
     [SerializeField] GameObject losePanel;
 
@@ -34,6 +44,7 @@ public class GameManager : MonoBehaviour
     int redCoinTriggerScore;
     bool redCoinAlreadySpawned;
     bool gameAlreadyFinished;
+    float timeLeft;
 
     public bool IsFinished => gameAlreadyFinished;
 
@@ -47,7 +58,47 @@ public class GameManager : MonoBehaviour
     {
         if (spawner != null) redCoinTriggerScore = Random.Range(1, Mathf.Max(2, targetScore));
         if (bonusText != null) bonusText.gameObject.SetActive(false);
+        timeLeft = timeLimit;
+        if (timerText != null)
+        {
+            timerText.gameObject.SetActive(timeLimit > 0f);
+            UpdateTimerText();
+        }
         UpdateUI();
+    }
+
+    void Update()
+    {
+        if (timeLimit <= 0f || gameAlreadyFinished) return;
+        timeLeft -= Time.deltaTime;
+        if (timeLeft <= 0f)
+        {
+            timeLeft = 0f;
+            UpdateTimerText();
+            Lose("Time's up!");
+            return;
+        }
+        UpdateTimerText();
+    }
+
+    void UpdateTimerText()
+    {
+        if (timerText == null) return;
+        timerText.text = $"Time: {timeLeft:0.0}";
+        timerText.color = timeLeft < 10f ? JuiceFx.DamageColor : Color.white;
+    }
+
+    public void AddTime(float seconds)
+    {
+        if (gameAlreadyFinished || timeLimit <= 0f) return;
+        timeLeft += seconds;
+        UpdateTimerText();
+        PunchText(timerText);
+    }
+
+    public void ReachGoal()
+    {
+        if (objective == Objective.ReachGoal) Win();
     }
 
     public void AddScore(int amount)
@@ -61,7 +112,7 @@ public class GameManager : MonoBehaviour
             redCoinAlreadySpawned = true;
             spawner.SpawnRed();
         }
-        if (score >= targetScore) Win();
+        if (objective == Objective.CollectCoins && score >= targetScore) Win();
     }
 
     public void SetBonusTotal(int total) => bonusTotal = total;
@@ -70,6 +121,15 @@ public class GameManager : MonoBehaviour
     {
         if (gameAlreadyFinished) return;
         bonusCollected += amount;
+
+        if (bonusTotal > 0 && bonusCollected == bonusTotal && timeLimit > 0f)
+        {
+            AddTime(bonusTimeReward);
+            if (player != null)
+                JuiceFx.FloatingText(player.transform.position + Vector3.up * 1.6f,
+                                     $"ALL! +{bonusTimeReward:0}s", JuiceFx.TimeColor, 20f);
+        }
+
         if (bonusText == null) return;
         bonusText.gameObject.SetActive(true);
         bonusText.text = $"BonusCoins: {bonusCollected}/{bonusTotal}";
@@ -78,7 +138,8 @@ public class GameManager : MonoBehaviour
 
     public void UpdateUI()
     {
-        if (scoreText != null) scoreText.text = $"Score: {score} / {targetScore}";
+        if (scoreText != null)
+            scoreText.text = objective == Objective.CollectCoins ? $"Score: {score} / {targetScore}" : objectiveLabel;
         if (livesText != null && player != null)
             livesText.text = $"Lives: {lives}   Hearts: {Mathf.Max(player.Current, 0)} / {player.Max}";
     }
@@ -93,7 +154,7 @@ public class GameManager : MonoBehaviour
         if (gameAlreadyFinished) return;
         lives--;
         UpdateUI();
-        if (lives <= 0) Lose();
+        if (lives <= 0) Lose("Out of lives!");
         else StartCoroutine(Respawn());
     }
 
@@ -113,7 +174,13 @@ public class GameManager : MonoBehaviour
         if (gameAlreadyFinished) return;
         gameAlreadyFinished = true;
         if (resultText != null)
-            resultText.text = $"Score: {score} / {targetScore}\nBonusCoins: {bonusCollected}/{bonusTotal}";
+        {
+            string summary = objective == Objective.CollectCoins
+                ? $"Score: {score} / {targetScore}"
+                : (timeLimit > 0f ? $"Time left: {timeLeft:0.0} s" : "Goal reached!");
+            if (bonusTotal > 0) summary += $"\nBonusCoins: {bonusCollected}/{bonusTotal}";
+            resultText.text = summary;
+        }
         winPanel.SetActive(true);
         Time.timeScale = 0f;
 
@@ -124,10 +191,11 @@ public class GameManager : MonoBehaviour
         JuiceFx.Ring(celebrationCenter, JuiceFx.GoldColor, 7f, 0.9f, true);
     }
 
-    void Lose()
+    void Lose(string reason)
     {
         if (gameAlreadyFinished) return;
         gameAlreadyFinished = true;
+        if (loseReasonText != null) loseReasonText.text = reason;
         losePanel.SetActive(true);
         Time.timeScale = 0f;
     }
@@ -136,5 +204,13 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void NextLevel()
+    {
+        Time.timeScale = 1f;
+        int next = SceneManager.GetActiveScene().buildIndex + 1;
+        if (next >= SceneManager.sceneCountInBuildSettings) next = 0;
+        SceneManager.LoadScene(next);
     }
 }
