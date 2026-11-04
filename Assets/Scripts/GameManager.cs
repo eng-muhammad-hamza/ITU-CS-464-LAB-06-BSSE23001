@@ -35,6 +35,8 @@ public class GameManager : MonoBehaviour
     bool redCoinAlreadySpawned;
     bool gameAlreadyFinished;
 
+    public bool IsFinished => gameAlreadyFinished;
+
     void Awake()
     {
         Instance = this;
@@ -53,6 +55,7 @@ public class GameManager : MonoBehaviour
         if (gameAlreadyFinished) return;
         score += amount;
         UpdateUI();
+        PunchText(scoreText);
         if (spawner != null && !redCoinAlreadySpawned && score >= redCoinTriggerScore)
         {
             redCoinAlreadySpawned = true;
@@ -70,13 +73,19 @@ public class GameManager : MonoBehaviour
         if (bonusText == null) return;
         bonusText.gameObject.SetActive(true);
         bonusText.text = $"BonusCoins: {bonusCollected}/{bonusTotal}";
+        PunchText(bonusText);
     }
 
     public void UpdateUI()
     {
         if (scoreText != null) scoreText.text = $"Score: {score} / {targetScore}";
         if (livesText != null && player != null)
-            livesText.text = $"Lives: {lives}   Health: {Mathf.Max(player.Current, 0)} / {player.Max}";
+            livesText.text = $"Lives: {lives}   Hearts: {Mathf.Max(player.Current, 0)} / {player.Max}";
+    }
+
+    static void PunchText(TMP_Text text)
+    {
+        if (text != null && text.TryGetComponent(out UiPunch punch)) punch.Punch();
     }
 
     public void PlayerDied()
@@ -107,6 +116,12 @@ public class GameManager : MonoBehaviour
             resultText.text = $"Score: {score} / {targetScore}\nBonusCoins: {bonusCollected}/{bonusTotal}";
         winPanel.SetActive(true);
         Time.timeScale = 0f;
+
+        Vector3 celebrationCenter = (player != null ? player.transform.position : Vector3.zero) + Vector3.up;
+        JuiceFx.Burst(celebrationCenter, JuiceFx.GoldColor, 70, 9f, 0.25f, 1.6f, true, 1.2f);
+        JuiceFx.Burst(celebrationCenter, JuiceFx.SpeedColor, 50, 8f, 0.22f, 1.6f, true, 1.2f);
+        JuiceFx.Burst(celebrationCenter, JuiceFx.HeartColor, 50, 7f, 0.22f, 1.6f, true, 1.2f);
+        JuiceFx.Ring(celebrationCenter, JuiceFx.GoldColor, 7f, 0.9f, true);
     }
 
     void Lose()

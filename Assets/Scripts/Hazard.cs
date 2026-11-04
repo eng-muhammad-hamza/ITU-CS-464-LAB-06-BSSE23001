@@ -12,6 +12,15 @@ public class Hazard : MonoBehaviour
     [SerializeField] float strikeTime = 0.4f;
     [SerializeField] GameObject warning;
 
+    [Header("Crusher animation (optional)")]
+    [SerializeField] Transform piston;
+    [SerializeField] float pistonRaisedLocalY = 3.5f;
+    [SerializeField] float pistonSlammedLocalY = 0.4f;
+    [SerializeField] float slamSeconds = 0.12f;
+    [SerializeField] float riseSeconds = 0.6f;
+    [SerializeField] float shakeSeconds = 0.3f;
+    [SerializeField] float shakeMagnitude = 0.3f;
+
     IEnumerator Start()
     {
         if (restTime <= 0f) yield break;
@@ -21,17 +30,60 @@ public class Hazard : MonoBehaviour
             Debug.LogWarning($"{name}: crusher needs a Collider and a Warning object.", this);
             yield break;
         }
+
+        SetPistonLocalHeight(pistonRaisedLocalY);
         while (true)
         {
             zone.enabled = false;
             yield return new WaitForSeconds(restTime);
+
             warning.SetActive(true);
             yield return new WaitForSeconds(warnTime);
             warning.SetActive(false);
+
             zone.enabled = true;
-            yield return new WaitForSeconds(strikeTime);
+            yield return MovePistonHeight(pistonRaisedLocalY, pistonSlammedLocalY, slamSeconds, EaseInQuadratic);
+            if (CameraShake.Instance != null) CameraShake.Instance.Shake(shakeSeconds, shakeMagnitude);
+            Vector3 impactPoint = new Vector3(transform.position.x, 0.15f, transform.position.z);
+            JuiceFx.Burst(impactPoint, new Color(0.8f, 0.75f, 0.7f), 36, 5f, 0.3f, 0.7f, false, 0.3f);
+            JuiceFx.Ring(impactPoint, JuiceFx.DamageColor, 5f, 0.45f);
+            float holdSeconds = piston == null ? strikeTime : Mathf.Max(0f, strikeTime - slamSeconds);
+            yield return new WaitForSeconds(holdSeconds);
+
+            zone.enabled = false;
+            yield return MovePistonHeight(pistonSlammedLocalY, pistonRaisedLocalY, riseSeconds, EaseOutQuadratic);
         }
     }
+
+    IEnumerator MovePistonHeight(float fromLocalY, float toLocalY, float durationSeconds, System.Func<float, float> easing)
+    {
+        if (piston == null) yield break;
+        if (durationSeconds <= 0f)
+        {
+            SetPistonLocalHeight(toLocalY);
+            yield break;
+        }
+        float elapsedSeconds = 0f;
+        while (elapsedSeconds < durationSeconds)
+        {
+            elapsedSeconds += Time.deltaTime;
+            float progress = easing(Mathf.Clamp01(elapsedSeconds / durationSeconds));
+            SetPistonLocalHeight(Mathf.Lerp(fromLocalY, toLocalY, progress));
+            yield return null;
+        }
+        SetPistonLocalHeight(toLocalY);
+    }
+
+    void SetPistonLocalHeight(float localY)
+    {
+        if (piston == null) return;
+        Vector3 localPosition = piston.localPosition;
+        localPosition.y = localY;
+        piston.localPosition = localPosition;
+    }
+
+    static float EaseInQuadratic(float progress) => progress * progress;
+    static float EaseOutQuadratic(float progress) => 1f - (1f - progress) * (1f - progress);
 
     void OnTriggerStay(Collider other)
     {

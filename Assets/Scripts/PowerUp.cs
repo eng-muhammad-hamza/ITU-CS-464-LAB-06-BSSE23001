@@ -13,7 +13,13 @@ public class PowerUp : MonoBehaviour
     {
         if (alreadyCollected || !other.CompareTag("Player")) return;
         alreadyCollected = true;
-        if (type == PowerUpType.Speed)
+
+        bool isSpeed = type == PowerUpType.Speed;
+        Color pickupColor = isSpeed ? JuiceFx.SpeedColor : JuiceFx.ShieldColor;
+        JuiceFx.Burst(transform.position, pickupColor, 30, 5f, 0.18f, 0.7f);
+        JuiceFx.Ring(transform.position, pickupColor, 2.4f, 0.45f);
+
+        if (isSpeed)
         {
             if (other.TryGetComponent(out PlayerController playerController))
                 playerController.BoostSpeed(multiplier, duration);
@@ -21,7 +27,7 @@ public class PowerUp : MonoBehaviour
         else
         {
             if (other.TryGetComponent(out Health playerHealth))
-                playerHealth.shielded = true;
+                playerHealth.GrantShield();
         }
         Destroy(gameObject);
     }
