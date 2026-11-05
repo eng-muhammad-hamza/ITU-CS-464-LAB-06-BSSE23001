@@ -50,6 +50,7 @@ public class GameManager : MonoBehaviour
     public bool ExitUnlocked => objective != Objective.CollectKeys || keysCollected >= keysRequired;
 
     public bool IsFinished => gameAlreadyFinished;
+    public int Score => score;
 
     void Awake()
     {
@@ -187,6 +188,7 @@ public class GameManager : MonoBehaviour
             if (objective == Objective.CollectCoins) summary = $"Score: {score} / {targetScore}";
             else if (objective == Objective.CollectKeys) summary = $"Keys: {keysCollected} / {keysRequired}\nLives left: {lives}";
             else summary = timeLimit > 0f ? $"Time left: {timeLeft:0.0} s" : "Goal reached!";
+            if (objective != Objective.CollectCoins && score > 0) summary += $"\nCoins: {score}";
             if (bonusTotal > 0) summary += $"\nBonusCoins: {bonusCollected}/{bonusTotal}";
             resultText.text = summary;
         }

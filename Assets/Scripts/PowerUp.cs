@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum PowerUpType { Speed, Shield, Ghost, Emp }
+public enum PowerUpType { Speed, Shield, Ghost, Emp, Magnet, Spring }
 
 public class PowerUp : MonoBehaviour
 {
@@ -19,22 +19,26 @@ public class PowerUp : MonoBehaviour
         JuiceFx.Ring(transform.position, pickupColor, 2.4f, 0.45f);
         JuiceFx.FloatingText(transform.position + Vector3.up * 0.9f, LabelFor(type), pickupColor, 14f);
 
-        if (type == PowerUpType.Speed)
+        switch (type)
         {
-            if (other.TryGetComponent(out PlayerController playerController))
-                playerController.BoostSpeed(multiplier, duration);
-        }
-        else if (type == PowerUpType.Shield)
-        {
-            if (other.TryGetComponent(out Health shieldTarget)) shieldTarget.GrantShield();
-        }
-        else if (type == PowerUpType.Ghost)
-        {
-            if (other.TryGetComponent(out Health ghostTarget)) ghostTarget.GrantGhost(duration);
-        }
-        else if (other.TryGetComponent(out EmpAbility empAbility))
-        {
-            empAbility.AddCharge();
+            case PowerUpType.Speed:
+                if (other.TryGetComponent(out PlayerController pc)) pc.BoostSpeed(multiplier, duration);
+                break;
+            case PowerUpType.Shield:
+                if (other.TryGetComponent(out Health shieldTarget)) shieldTarget.GrantShield();
+                break;
+            case PowerUpType.Ghost:
+                if (other.TryGetComponent(out Health ghostTarget)) ghostTarget.GrantGhost(duration);
+                break;
+            case PowerUpType.Emp:
+                if (other.TryGetComponent(out EmpAbility emp)) emp.AddCharge();
+                break;
+            case PowerUpType.Magnet:
+                if (other.TryGetComponent(out MagnetAbility magnet)) magnet.Activate(duration);
+                break;
+            case PowerUpType.Spring:
+                if (other.TryGetComponent(out SubwayController runner)) runner.AddSpring();
+                break;
         }
         Destroy(gameObject);
     }
@@ -46,6 +50,8 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.Speed: return JuiceFx.SpeedColor;
             case PowerUpType.Shield: return JuiceFx.ShieldColor;
             case PowerUpType.Ghost: return JuiceFx.GhostColor;
+            case PowerUpType.Magnet: return JuiceFx.MagnetColor;
+            case PowerUpType.Spring: return JuiceFx.SpringColor;
             default: return JuiceFx.EmpColor;
         }
     }
@@ -57,6 +63,8 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.Speed: return "SPEED";
             case PowerUpType.Shield: return "SHIELD";
             case PowerUpType.Ghost: return "GHOST";
+            case PowerUpType.Magnet: return "MAGNET";
+            case PowerUpType.Spring: return "SPRING";
             default: return "EMP [E]";
         }
     }
