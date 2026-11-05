@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public enum Objective { CollectCoins, ReachGoal, CollectKeys }
+public enum Objective { CollectCoins, ReachGoal, CollectKeys, Survive }
 
 public class GameManager : MonoBehaviour
 {
@@ -51,6 +51,12 @@ public class GameManager : MonoBehaviour
     int keysCollected;
     public bool ExitUnlocked => objective != Objective.CollectKeys || keysCollected >= keysRequired;
 
+    float doubleUntil;
+    public bool CoinsDoubled => Time.time < doubleUntil;
+    public float DoubleSecondsRemaining => Mathf.Max(0f, doubleUntil - Time.time);
+    public float Elapsed => timeLimit > 0f ? timeLimit - timeLeft : Time.timeSinceLevelLoad;
+    public void DoubleCoins(float seconds) => doubleUntil = Time.time + seconds;
+
     float slowUntil;
     float slowTimerScale = 1f;
     public float SlowSecondsRemaining => Mathf.Max(0f, slowUntil - Time.time);
@@ -86,7 +92,12 @@ public class GameManager : MonoBehaviour
         {
             timeLeft = 0f;
             UpdateTimerText();
-            Lose("Time's up!");
+            if (objective == Objective.Survive)
+            {
+                if (score >= targetScore) Win();
+                else Lose($"Only {score}/{targetScore} coins!");
+            }
+            else Lose("Time's up!");
             return;
         }
         UpdateTimerText();
@@ -95,7 +106,7 @@ public class GameManager : MonoBehaviour
     void UpdateTimerText()
     {
         if (timerText == null) return;
-        timerText.text = $"Time: {timeLeft:0.0}";
+        timerText.text = $"{(objective == Objective.Survive ? "Survive" : "Time")}: {timeLeft:0.0}";
         timerText.color = Time.time < slowUntil ? JuiceFx.SlowColor : (timeLeft < 10f ? JuiceFx.DamageColor : Color.white);
     }
 
@@ -109,13 +120,14 @@ public class GameManager : MonoBehaviour
 
     public void ReachGoal()
     {
-        if (objective == Objective.CollectCoins || !ExitUnlocked) return;
+        if (objective == Objective.CollectCoins || objective == Objective.Survive || !ExitUnlocked) return;
         Win();
     }
 
     public void AddScore(int amount)
     {
         if (gameAlreadyFinished) return;
+        if (Time.time < doubleUntil) amount *= 2;
         score += amount;
         UpdateUI();
         PunchText(scoreText);
@@ -154,6 +166,7 @@ public class GameManager : MonoBehaviour
         {
             if (objective == Objective.CollectCoins) scoreText.text = $"Score: {score} / {targetScore}";
             else if (objective == Objective.CollectKeys) scoreText.text = $"{collectibleName}: {keysCollected} / {keysRequired}";
+            else if (objective == Objective.Survive) scoreText.text = $"Coins: {score} / {targetScore}";
             else scoreText.text = objectiveLabel;
         }
         if (livesText != null && player != null)
@@ -199,8 +212,9 @@ public class GameManager : MonoBehaviour
             string summary;
             if (objective == Objective.CollectCoins) summary = $"Score: {score} / {targetScore}";
             else if (objective == Objective.CollectKeys) summary = $"{collectibleName}: {keysCollected} / {keysRequired}\nLives left: {lives}" + (timeLimit > 0f ? $"\nTime left: {timeLeft:0.0} s" : "");
+            else if (objective == Objective.Survive) summary = $"Survived {timeLimit:0} s!\nCoins: {score} / {targetScore}\nHearts left: {(player != null ? Mathf.Max(player.Current, 0) : 0)}";
             else summary = timeLimit > 0f ? $"Time left: {timeLeft:0.0} s" : "Goal reached!";
-            if (objective != Objective.CollectCoins && score > 0) summary += $"\nCoins: {score}";
+            if (objective == Objective.ReachGoal) summary += $"\nCoins: {score}";
             if (bonusTotal > 0) summary += $"\nBonusCoins: {bonusCollected}/{bonusTotal}";
             resultText.text = summary;
         }
