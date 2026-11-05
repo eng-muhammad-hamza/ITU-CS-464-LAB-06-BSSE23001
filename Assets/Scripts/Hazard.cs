@@ -4,13 +4,14 @@ using UnityEngine;
 public class Hazard : MonoBehaviour
 {
     [SerializeField] int damage = 1;
-    [SerializeField] bool ghostCanPass = false;
     [SerializeField] float knockback = 6f;
+    [SerializeField] bool ghostCanPass = false;
 
     [Header("A crusher: give it a rest time and it strikes on a cycle (0 = always dangerous)")]
     [SerializeField] float restTime = 0f;
     [SerializeField] float warnTime = 0.7f;
     [SerializeField] float strikeTime = 0.4f;
+    [SerializeField] float startDelay = 0f;
     [SerializeField] GameObject warning;
 
     [Header("Crusher animation (optional)")]
@@ -21,7 +22,8 @@ public class Hazard : MonoBehaviour
     [SerializeField] float riseSeconds = 0.6f;
     [SerializeField] float shakeSeconds = 0.3f;
     [SerializeField] float shakeMagnitude = 0.3f;
-    [SerializeField] float startDelay = 0f;
+
+    public bool IsResting { get; private set; }
 
     IEnumerator Start()
     {
@@ -34,18 +36,18 @@ public class Hazard : MonoBehaviour
         }
 
         SetPistonLocalHeight(pistonRaisedLocalY);
-        if (startDelay > 0f)
-        {
-            zone.enabled = false;
-            yield return new WaitForSeconds(startDelay);
-        }
+        zone.enabled = false;
+        if (startDelay > 0f) yield return Wait(startDelay);
+
         while (true)
         {
             zone.enabled = false;
-            yield return new WaitForSeconds(restTime);
+            IsResting = true;
+            yield return Wait(restTime);
+            IsResting = false;
 
             warning.SetActive(true);
-            yield return new WaitForSeconds(warnTime);
+            yield return Wait(warnTime);
             warning.SetActive(false);
 
             zone.enabled = true;
@@ -55,10 +57,20 @@ public class Hazard : MonoBehaviour
             JuiceFx.Burst(impactPoint, new Color(0.8f, 0.75f, 0.7f), 36, 5f, 0.3f, 0.7f, false, 0.3f);
             JuiceFx.Ring(impactPoint, JuiceFx.DamageColor, 5f, 0.45f);
             float holdSeconds = piston == null ? strikeTime : Mathf.Max(0f, strikeTime - slamSeconds);
-            yield return new WaitForSeconds(holdSeconds);
+            yield return Wait(holdSeconds);
 
             zone.enabled = false;
             yield return MovePistonHeight(pistonSlammedLocalY, pistonRaisedLocalY, riseSeconds, EaseOutQuadratic);
+        }
+    }
+
+    static IEnumerator Wait(float seconds)
+    {
+        float elapsed = 0f;
+        while (elapsed < seconds)
+        {
+            if (!FreezeEffect.Active) elapsed += Time.deltaTime;
+            yield return null;
         }
     }
 
@@ -95,6 +107,7 @@ public class Hazard : MonoBehaviour
     void OnTriggerStay(Collider other)
     {
         if (!enabled) return;
+        if (restTime > 0f && FreezeEffect.Active) return;
         if (!other.TryGetComponent(out Health health)) return;
         if (ghostCanPass && health.IsGhost) return;
         if (!health.TakeDamage(damage)) return;

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum PowerUpType { Speed, Shield, Ghost, Emp, Magnet, Spring, Dash, Freeze, SlowTime }
+public enum PowerUpType { Speed, Shield, Ghost, Emp, Magnet, Spring, Dash, Freeze, SlowTime, CoinX2 }
 
 public class PowerUp : MonoBehaviour
 {
@@ -49,6 +49,9 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.SlowTime:
                 if (GameManager.Instance != null) GameManager.Instance.SlowTimer(duration, multiplier);
                 break;
+            case PowerUpType.CoinX2:
+                if (GameManager.Instance != null) GameManager.Instance.DoubleCoins(duration);
+                break;
         }
         Destroy(gameObject);
     }
@@ -65,6 +68,7 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.Dash: return JuiceFx.DashColor;
             case PowerUpType.Freeze: return JuiceFx.FreezeColor;
             case PowerUpType.SlowTime: return JuiceFx.SlowColor;
+            case PowerUpType.CoinX2: return JuiceFx.GoldColor;
             default: return JuiceFx.EmpColor;
         }
     }
@@ -81,6 +85,7 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.Dash: return "DASH [SPACE]";
             case PowerUpType.Freeze: return "FREEZE";
             case PowerUpType.SlowTime: return "SLOW-MO";
+            case PowerUpType.CoinX2: return "COINS x2";
             default: return "EMP [E]";
         }
     }

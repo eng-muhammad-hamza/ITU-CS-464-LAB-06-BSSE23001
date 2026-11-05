@@ -15,7 +15,8 @@ public class Coin : MonoBehaviour
 
         JuiceFx.Burst(transform.position, JuiceFx.GoldColor, 14, 4f, 0.14f, 0.5f);
         JuiceFx.Ring(transform.position, JuiceFx.GoldColor, 1.3f, 0.3f);
-        JuiceFx.FloatingText(transform.position + Vector3.up * 0.8f, $"+{value}", JuiceFx.GoldColor);
+        int shown = GameManager.Instance != null && GameManager.Instance.CoinsDoubled ? value * 2 : value;
+        JuiceFx.FloatingText(transform.position + Vector3.up * 0.8f, $"+{shown}", JuiceFx.GoldColor);
 
         if (GameManager.Instance != null) GameManager.Instance.AddScore(value);
         else Debug.LogError("No active GameManager in the scene.", this);
