@@ -2787,8 +2787,10 @@ MonoBehaviour:
   targetScore: 10
   objectiveLabel: Reach the goal!
   keysRequired: 3
+  collectibleName: Keys
   timeLimit: 0
   bonusTimeReward: 10
+  deathTimePenalty: 0
   lives: 3
   respawnDelay: 0.6
   spawnProtection: 1.5
