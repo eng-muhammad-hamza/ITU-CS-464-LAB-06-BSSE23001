@@ -14,10 +14,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] int targetScore = 10;
     [SerializeField] string objectiveLabel = "Reach the goal!";
     [SerializeField] int keysRequired = 3;
+    [SerializeField] string collectibleName = "Keys";
 
     [Header("Timer (0 = no timer)")]
     [SerializeField] float timeLimit = 0f;
     [SerializeField] float bonusTimeReward = 10f;
+    [SerializeField] float deathTimePenalty = 0f;
 
     [Header("Lives and respawn")]
     [SerializeField] int lives = 3;
@@ -49,6 +51,10 @@ public class GameManager : MonoBehaviour
     int keysCollected;
     public bool ExitUnlocked => objective != Objective.CollectKeys || keysCollected >= keysRequired;
 
+    float slowUntil;
+    float slowTimerScale = 1f;
+    public float SlowSecondsRemaining => Mathf.Max(0f, slowUntil - Time.time);
+
     public bool IsFinished => gameAlreadyFinished;
     public int Score => score;
 
@@ -56,6 +62,7 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
         Time.timeScale = 1f;
+        FreezeEffect.Clear();
     }
 
     void Start()
@@ -74,7 +81,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         if (timeLimit <= 0f || gameAlreadyFinished) return;
-        timeLeft -= Time.deltaTime;
+        timeLeft -= Time.deltaTime * (Time.time < slowUntil ? slowTimerScale : 1f);
         if (timeLeft <= 0f)
         {
             timeLeft = 0f;
@@ -89,7 +96,7 @@ public class GameManager : MonoBehaviour
     {
         if (timerText == null) return;
         timerText.text = $"Time: {timeLeft:0.0}";
-        timerText.color = timeLeft < 10f ? JuiceFx.DamageColor : Color.white;
+        timerText.color = Time.time < slowUntil ? JuiceFx.SlowColor : (timeLeft < 10f ? JuiceFx.DamageColor : Color.white);
     }
 
     public void AddTime(float seconds)
@@ -146,7 +153,7 @@ public class GameManager : MonoBehaviour
         if (scoreText != null)
         {
             if (objective == Objective.CollectCoins) scoreText.text = $"Score: {score} / {targetScore}";
-            else if (objective == Objective.CollectKeys) scoreText.text = $"Keys: {keysCollected} / {keysRequired}";
+            else if (objective == Objective.CollectKeys) scoreText.text = $"{collectibleName}: {keysCollected} / {keysRequired}";
             else scoreText.text = objectiveLabel;
         }
         if (livesText != null && player != null)
@@ -162,6 +169,11 @@ public class GameManager : MonoBehaviour
     {
         if (gameAlreadyFinished) return;
         lives--;
+        if (deathTimePenalty > 0f && timeLimit > 0f)
+        {
+            timeLeft = Mathf.Max(1f, timeLeft - deathTimePenalty);
+            UpdateTimerText();
+        }
         UpdateUI();
         if (lives <= 0) Lose("Out of lives!");
         else StartCoroutine(Respawn());
@@ -186,7 +198,7 @@ public class GameManager : MonoBehaviour
         {
             string summary;
             if (objective == Objective.CollectCoins) summary = $"Score: {score} / {targetScore}";
-            else if (objective == Objective.CollectKeys) summary = $"Keys: {keysCollected} / {keysRequired}\nLives left: {lives}";
+            else if (objective == Objective.CollectKeys) summary = $"{collectibleName}: {keysCollected} / {keysRequired}\nLives left: {lives}" + (timeLimit > 0f ? $"\nTime left: {timeLeft:0.0} s" : "");
             else summary = timeLimit > 0f ? $"Time left: {timeLeft:0.0} s" : "Goal reached!";
             if (objective != Objective.CollectCoins && score > 0) summary += $"\nCoins: {score}";
             if (bonusTotal > 0) summary += $"\nBonusCoins: {bonusCollected}/{bonusTotal}";
@@ -233,8 +245,15 @@ public class GameManager : MonoBehaviour
         PunchText(scoreText);
         if (player != null)
         {
-            string message = keysCollected >= keysRequired ? "EXIT OPEN!" : $"KEY {keysCollected}/{keysRequired}";
+            string message = keysCollected >= keysRequired ? "EXIT OPEN!" : $"{collectibleName.ToUpper()} {keysCollected}/{keysRequired}";
             JuiceFx.FloatingText(player.transform.position + Vector3.up * 1.6f, message, JuiceFx.KeyColor, 20f);
         }
     }
+
+    public void SlowTimer(float seconds, float scale)
+    {
+        slowUntil = Time.time + seconds;
+        slowTimerScale = Mathf.Clamp(scale, 0.1f, 1f);
+    }
+
 }

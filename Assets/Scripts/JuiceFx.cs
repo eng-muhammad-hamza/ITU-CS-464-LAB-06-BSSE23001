@@ -15,6 +15,11 @@ public static class JuiceFx
     public static readonly Color KeyColor = new Color(1f, 0.92f, 0.35f);
     public static readonly Color MagnetColor = new Color(1f, 0.2f, 0.75f);
     public static readonly Color SpringColor = new Color(0.6f, 1f, 0.2f);
+    public static readonly Color CellColor = new Color(0.25f, 1f, 0.55f);
+    public static readonly Color DashColor = new Color(0.2f, 1f, 0.75f);
+    public static readonly Color FreezeColor = new Color(0.65f, 0.85f, 1f);
+    public static readonly Color SlowColor = new Color(0.95f, 0.95f, 0.6f);
+    public static readonly Color PortalColor = new Color(0.8f, 0.4f, 1f);
 
     static Material cachedParticleMaterial;
 

@@ -10,6 +10,12 @@ public class LaserGate : MonoBehaviour
     [SerializeField] float onSeconds = 1.2f;
     [SerializeField] float startDelay = 0f;
 
+    Color normalColor;
+    bool dangerousWanted;
+    bool wasFrozen;
+
+    void Awake() => normalColor = beamRenderer.material.color;
+
     IEnumerator Start()
     {
         SetBeam(false, false);
@@ -32,9 +38,18 @@ public class LaserGate : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        bool frozen = FreezeEffect.Active;
+        beamCollider.enabled = dangerousWanted && !frozen;
+        if (frozen == wasFrozen) return;
+        wasFrozen = frozen;
+        beamRenderer.material.color = frozen ? JuiceFx.FreezeColor : normalColor;
+    }
+
     void SetBeam(bool visible, bool dangerous)
     {
         beamRenderer.enabled = visible;
-        beamCollider.enabled = dangerous;
+        dangerousWanted = dangerous;
     }
 }

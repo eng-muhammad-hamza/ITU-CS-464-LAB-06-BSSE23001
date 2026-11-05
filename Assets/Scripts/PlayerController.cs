@@ -11,6 +11,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float iceControl = 0.5f;
     [SerializeField] float iceMaxSpeed = 7f;
     int iceContacts;
+    float dashUntil;
     float normalLinearDamping;
     float normalAngularDamping;
 
@@ -56,7 +57,7 @@ public class PlayerController : MonoBehaviour
     {
         bool onIce = iceContacts > 0;
         rb.AddForce(input * moveForce * speedMultiplier * (onIce ? iceControl : 1f));
-        if (!onIce) return;
+        if (!onIce || Time.time < dashUntil) return;
 
         Vector3 velocity = rb.linearVelocity;
         Vector3 flat = new Vector3(velocity.x, 0f, velocity.z);
@@ -108,5 +109,12 @@ public class PlayerController : MonoBehaviour
         bool onIce = iceContacts > 0;
         rb.linearDamping = onIce ? iceDamping : normalLinearDamping;
         rb.angularDamping = onIce ? iceDamping : normalAngularDamping;
+    }
+
+    public void Impulse(Vector3 direction, float speed, float seconds)
+    {
+        Vector3 velocity = rb.linearVelocity;
+        rb.linearVelocity = new Vector3(direction.x * speed, velocity.y, direction.z * speed);
+        dashUntil = Time.time + seconds;
     }
 }

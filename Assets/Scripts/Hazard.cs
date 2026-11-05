@@ -94,6 +94,7 @@ public class Hazard : MonoBehaviour
 
     void OnTriggerStay(Collider other)
     {
+        if (!enabled) return;
         if (!other.TryGetComponent(out Health health)) return;
         if (ghostCanPass && health.IsGhost) return;
         if (!health.TakeDamage(damage)) return;
