@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum PowerUpType { Speed, Shield, Ghost, Emp, Magnet, Spring }
+public enum PowerUpType { Speed, Shield, Ghost, Emp, Magnet, Spring, Dash, Freeze, SlowTime }
 
 public class PowerUp : MonoBehaviour
 {
@@ -39,6 +39,16 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.Spring:
                 if (other.TryGetComponent(out SubwayController runner)) runner.AddSpring();
                 break;
+            case PowerUpType.Dash:
+                if (other.TryGetComponent(out DashAbility dash)) dash.Activate(duration);
+                break;
+            case PowerUpType.Freeze:
+                FreezeEffect.Begin(duration);
+                JuiceFx.Ring(other.transform.position, JuiceFx.FreezeColor, 9f, 0.5f);
+                break;
+            case PowerUpType.SlowTime:
+                if (GameManager.Instance != null) GameManager.Instance.SlowTimer(duration, multiplier);
+                break;
         }
         Destroy(gameObject);
     }
@@ -52,6 +62,9 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.Ghost: return JuiceFx.GhostColor;
             case PowerUpType.Magnet: return JuiceFx.MagnetColor;
             case PowerUpType.Spring: return JuiceFx.SpringColor;
+            case PowerUpType.Dash: return JuiceFx.DashColor;
+            case PowerUpType.Freeze: return JuiceFx.FreezeColor;
+            case PowerUpType.SlowTime: return JuiceFx.SlowColor;
             default: return JuiceFx.EmpColor;
         }
     }
@@ -65,6 +78,9 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.Ghost: return "GHOST";
             case PowerUpType.Magnet: return "MAGNET";
             case PowerUpType.Spring: return "SPRING";
+            case PowerUpType.Dash: return "DASH [SPACE]";
+            case PowerUpType.Freeze: return "FREEZE";
+            case PowerUpType.SlowTime: return "SLOW-MO";
             default: return "EMP [E]";
         }
     }
